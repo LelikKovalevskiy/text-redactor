@@ -6,15 +6,15 @@ struct Node
 {
     item x;
     Node *Next,*Prev;
-    Node():Next(0),Prev(0){ };
+    Node():Next(0),Prev(0) { };
 };
 template< class item >
 class List
 {
 private:
-    Node<item> *Head,*Tail;
+    Node<item> *Head,*Tail,*cursor;
 public:
-    List():Head(0),Tail(0) {};
+    List():Head(0),Tail(0),cursor(Head) {};
     List(List &orig,int):Head(orig.Head),Tail(orig.Tail)
     {
         orig.Head=0;
@@ -28,7 +28,16 @@ public:
     int count();
     void sort(bool (*compare)(item , item )) ;
     void print();
-
+    /////////////////Для текст. редактора////////////////
+    Node<item>* return_cursor();
+    void cursor_right();
+    void cursor_left();
+    void del_on_cursor();
+    void put_on_cursor(item);
+    List* copy(Node<item>*,Node<item>*);
+    void past_on_cursor(List<item>*);
+    void cursor_begin();
+    int cursor_pos();
 };
 template< class item >
 List <item> ::~List()
@@ -96,12 +105,12 @@ item List <item>::getFrom(int y)
 template <class item>
 void List<item>::del(int x)
 {
-   Node<item>*temp=Head;
-   for(int i=0;i<x-1;++i)
-   {
-       temp=temp->Next;
-   }
-   if(Head==Tail && Tail==temp)
+    Node<item>*temp=Head;
+    for(int i=0; i<x-1; ++i)
+    {
+        temp=temp->Next;
+    }
+    if(Head==Tail && Tail==temp)
     {
         Head=Tail=0;
     }
@@ -166,7 +175,7 @@ void List<item>::putOn(int x,item c)
 }
 template< class item >
 void List<item>::sort(bool (*compare)(item , item
-                                      ))
+                                     ))
 {
     List<item> Sorted;
     while(Head)
@@ -193,12 +202,18 @@ template< class item >
 item List <item>::returnDataFrom(int y)
 {
     Node<item>* temp=Head;
-     for(int i=0; i<y-1; ++i)
+    for(int i=0; i<y-1; ++i)
     {
         temp=temp->Next;
     }
     return temp->x;
 
+}
+///////////////////////////Для текст. редактора//////////////
+template< class item >
+Node<item>* List<item>::return_cursor()
+{
+    return cursor;
 }
 template< class item >
 void List<item>::print()
@@ -207,11 +222,131 @@ void List<item>::print()
     while(tmp!=0)
     {
 
-       addch(tmp->x);
+        addch(tmp->x);
         tmp=tmp->Next;
 
     }
 }
+template < class item >
+void List<item>::cursor_right()
+{
+    if(cursor->Next==0)
+        ;
+    else
+        cursor=cursor->Next;
+}
+template < class item >
+void List<item>::cursor_left()
+{
+    if(cursor->Prev==0)
+        ;
+    else
+        cursor=cursor->Prev;
+}
+template < class item >
+void List<item>::del_on_cursor()
+{
+    if(cursor==Head&&this->count()==1)
+    {
+       delete cursor;
+       Head=Tail=cursor=0;
+    }
+    else if(cursor==Head)
+    {
+        Head->Next->Prev=0;
+        Head=Head->Next;
+        delete cursor;
+        cursor=Head;
+    }
+    else if(cursor==Tail)
+    {
+        Tail->Prev->Next=0;
+        Tail=Tail->Prev;
+        delete cursor;
+        cursor=Tail;
+    }
+    else
+    {
+        Node<item>*temp=cursor;
+        cursor=cursor->Next;
+        temp->Next->Prev=temp->Prev;
+        temp->Prev->Next=temp->Next;
+        temp=0;
+        delete temp;
+    }
 
+}
+template < class item >
+void List<item>::put_on_cursor(item c)
+{
+    Node<item> *temp;
+    temp=new Node<item>;
+    temp->x=c;
+    if(cursor==0)
+    {
+        Head=Tail=temp;
+        cursor=Head;
+    }
+    else if (cursor==Head)
+    {
+        Head->Prev=temp;
+        temp->Next=Head;
+        Head=temp;
+        cursor=Head;
+    }
+    else
+    {
+        temp->Prev=cursor->Prev;
+        cursor->Prev->Next=temp;
+        cursor->Prev=temp;
+        temp->Next=cursor;
 
+    }
+}
+template < class item >
+List<item>* List<item>::copy(Node<item>*l,Node<item>*r)
+{
+    List<item>*temp=new List<item>;
+    while(1)
+    {
+        //
+        if(l==r)
+        {
+            temp->putOn(temp->count()+1,r->x);
+            break;
+        }
+        temp->putOn(temp->count()+1,l->x);
+        l=l->Next;
+
+    }
+    return temp;
+}
+template <class item>
+void List<item>::past_on_cursor(List<item>*pasted)
+{
+
+    cursor->Prev->Next=pasted->Head;
+    pasted->Head->Prev=cursor->Prev;
+    cursor->Prev=pasted->Tail;
+    pasted->Tail->Next=cursor;
+
+}
+template <class item>
+void List<item>::cursor_begin()
+{
+    if(Head!=0)
+        cursor=Head;
+}
+template <class item>
+int List<item>::cursor_pos()
+{
+    Node<item>*tmp=Head;
+    int count=1;
+    while(tmp!=cursor)
+    {
+        ++count;
+        tmp=tmp->Next;
+    }
+    return count;
+}
 #endif // LIST_H_INCLUDED
