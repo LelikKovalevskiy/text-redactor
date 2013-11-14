@@ -1,352 +1,292 @@
 #ifndef LIST_H_INCLUDED
-#define LIST_H_INCLUDED
 #include <curses.h>
-template< class item >
-struct Node
-{
-    item x;
-    Node *Next,*Prev;
-    Node():Next(0),Prev(0) { };
-};
-template< class item >
-class List
-{
-private:
-    Node<item> *Head,*Tail,*cursor;
-public:
-    List():Head(0),Tail(0),cursor(Head) {};
-    List(List &orig,int):Head(orig.Head),Tail(orig.Tail)
-    {
-        orig.Head=0;
-        orig.Tail=0;
-    }
-    ~List();
-    item getFrom(int x);
-    void del(int x);
-    item returnDataFrom(int x);
-    void putOn(int x,item c);
-    int count();
-    void sort(bool (*compare)(item , item )) ;
-    void print();
-    /////////////////Для текст. редактора////////////////
-    Node<item>* return_cursor();
-    void cursor_right();
-    void cursor_left();
-    void del_on_cursor();
-    void put_on_cursor(item);
-    List* copy(Node<item>*,Node<item>*);
-    void past_on_cursor(List<item>*);
-    void cursor_begin();
-    int cursor_pos();
-};
-template< class item >
-List <item> ::~List()
-{
-    while (Head)
-    {
-        Tail=Head->Next;
-        delete Head;
-        Head=Tail;
-    }
-}
-template< class item >
-int List <item>::count()
-{
-    int count=0;
-    Node <item>* temp=Head;
-    while(temp)
-    {
-        ++count;
-        temp=temp->Next;
+#include <fstream>
+#include "list.h"
+#include <iostream>
+using namespace std;
 
-    }
-    return count;
-}
-template< class item >
-item List <item>::getFrom(int y)
+int main()
 {
-    Node<item> *temp;
-    temp=Head;
-    item data_temp;
-    for(int i=0; i<y-1; ++i)
+    bool exit=false;
+    bool cut=false;
+    bool copy=false;
+    char symbol;
+    int cursor_pos;
+    Node<char>*left;
+    Node<char>*right;
+    List<char>*temp;
+    List<char>*str;
+    str=new List<char>;
+    initscr();
+    List<List<char>*> text;
+    ifstream in;
+    in.open("text.txt");
+    if(in.is_open())
     {
-        temp=temp->Next;
-    }
-    if(Head==Tail && Tail==temp)
-    {
-        data_temp=temp->x;
-        Head=Tail=0;
-    }
-    else if (temp==Head)
-    {
-        Head=Head->Next;
-        Head->Prev=0;
-        data_temp=temp->x;
-    }
-    else if(temp==Tail)
-    {
-        Tail=Tail->Prev;
-        Tail->Next=0;
-        data_temp=temp->x;
-    }
-    else
-    {
-        Node<item> *next=temp->Next;
-        Node<item> *previous=temp->Prev;
-        previous->Next=temp->Next;
-        next->Prev=temp->Prev;
-        data_temp=temp->x;
-    }
-    temp=0;
-    delete temp;
-    return data_temp;
-
-}
-template <class item>
-void List<item>::del(int x)
-{
-    Node<item>*temp=Head;
-    for(int i=0; i<x-1; ++i)
-    {
-        temp=temp->Next;
-    }
-    if(Head==Tail && Tail==temp)
-    {
-        Head=Tail=0;
-    }
-    else if (temp==Head)
-    {
-        Head=Head->Next;
-        Head->Prev=0;
-    }
-    else if(temp==Tail)
-    {
-        Tail=Tail->Prev;
-        Tail->Next=0;
-    }
-    else
-    {
-        Node<item> *next=temp->Next;
-        Node<item> *previous=temp->Prev;
-        previous->Next=temp->Next;
-        next->Prev=temp->Prev;
-    }
-    temp=0;
-    delete temp;
-}
-template< class item >
-void List<item>::putOn(int x,item c)
-{
-    Node<item> *temp=new Node<item>;
-    temp->x=c;
-    if(x==1)
-    {
-        temp->Prev=0;
-        temp->Next=0;
-        if(Head!=0)
+        str=new List<char>;
+        text.putOn(1,str);
+        while(!in.eof())
         {
-            temp->Next=Head;
-            Head->Prev=temp;
-            Head=temp;
-        }
-        else
-        {
-            Head=Tail=temp;
-        }
-    }
-    else if(x==count()+1)
-    {
-
-        temp->Next=0;
-        temp->Prev=Tail;
-        Tail->Next=temp;
-        Tail=temp;
-    }
-    else
-    {
-        Node<item> *previous=Head;
-        for(int i=0; i<x-2; ++i)
-            previous=previous->Next;
-        temp->Next=previous->Next;
-        temp->Next->Prev=temp;
-        temp->Prev=previous;
-        previous->Next=temp;
-    }
-}
-template< class item >
-void List<item>::sort(bool (*compare)(item , item
-                                     ))
-{
-    List<item> Sorted;
-    while(Head)
-    {
-        item tempSorting=getFrom(1);
-        int i;
-        int tmpCounter=Sorted.count();
-        Node<item>* tempSorted=Sorted.Head;
-        for(i=1; i<=tmpCounter; ++i)
-        {
-
-            if(compare(tempSorting,tempSorted->x))
+            str->cursor_begin();
+            in.get(symbol);
+            if(in.eof())
                 break;
-            tempSorted=tempSorted->Next;
+            if(symbol=='\n')
+            {
+                str=new List<char>;
+                text.putOn(text.count()+1,str);
+            }
+            else
+            {
+                str->putOn(str->count()+1,symbol);
+            }
 
         }
-        Sorted.putOn(i,tempSorting);
-    }
-    Head=Sorted.Head;
-    Tail=Sorted.Tail;
-
-}
-template< class item >
-item List <item>::returnDataFrom(int y)
-{
-    Node<item>* temp=Head;
-    for(int i=0; i<y-1; ++i)
-    {
-        temp=temp->Next;
-    }
-    return temp->x;
-
-}
-///////////////////////////Для текст. редактора//////////////
-template< class item >
-Node<item>* List<item>::return_cursor()
-{
-    return cursor;
-}
-template< class item >
-void List<item>::print()
-{
-    Node<item>*tmp=Head;
-    while(tmp!=0)
-    {
-
-        addch(tmp->x);
-        tmp=tmp->Next;
 
     }
-}
-template < class item >
-void List<item>::cursor_right()
-{
-    if(cursor->Next==0)
-        ;
-    else
-        cursor=cursor->Next;
-}
-template < class item >
-void List<item>::cursor_left()
-{
-    if(cursor->Prev==0)
-        ;
-    else
-        cursor=cursor->Prev;
-}
-template < class item >
-void List<item>::del_on_cursor()
-{
-    if(cursor==Head&&this->count()==1)
+    text.cursor_begin();
+    text.return_cursor()->x->cursor_begin();
+    in.close();
+
+    for(int i=1; i<=text.count(); ++i)
     {
-       delete cursor;
-       Head=Tail=cursor=0;
-    }
-    else if(cursor==Head)
-    {
-        Head->Next->Prev=0;
-        Head=Head->Next;
-        delete cursor;
-        cursor=Head;
-    }
-    else if(cursor==Tail)
-    {
-        Tail->Prev->Next=0;
-        Tail=Tail->Prev;
-        delete cursor;
-        cursor=Tail;
-    }
-    else
-    {
-        Node<item>*temp=cursor;
-        cursor=cursor->Next;
-        temp->Next->Prev=temp->Prev;
-        temp->Prev->Next=temp->Next;
-        temp=0;
-        delete temp;
+        for(int j=1; j<=text.returnDataFrom(i)->count(); ++j)
+            addch(text.returnDataFrom(i)->returnDataFrom(j));
+        addch('\n');
     }
 
-}
-template < class item >
-void List<item>::put_on_cursor(item c)
-{
-    Node<item> *temp;
-    temp=new Node<item>;
-    temp->x=c;
-    if(cursor==0)
+    move(text.cursor_pos()-1,str->cursor_pos()-1);
+    noecho();
+    str=text.return_cursor()->x;
+    while(!exit)
     {
-        Head=Tail=temp;
-        cursor=Head;
-    }
-    else if (cursor==Head)
-    {
-        Head->Prev=temp;
-        temp->Next=Head;
-        Head=temp;
-        cursor=Head;
-    }
-    else
-    {
-        temp->Prev=cursor->Prev;
-        cursor->Prev->Next=temp;
-        cursor->Prev=temp;
-        temp->Next=cursor;
-
-    }
-}
-template < class item >
-List<item>* List<item>::copy(Node<item>*l,Node<item>*r)
-{
-    List<item>*temp=new List<item>;
-    while(1)
-    {
-        //
-        if(l==r)
+        symbol=getch();
+        switch(int(symbol))
         {
-            temp->putOn(temp->count()+1,r->x);
+            //Режим навигации
+        case 1:
+            if(str->cursor_pos()-1>0)
+            {
+                str->cursor_left();
+                move(text.cursor_pos()-1,str->cursor_pos()-1);
+            }
+            else flash();
             break;
+        case 4:
+            if(str->cursor_pos()==str->count()&&str->return_cursor()->x!=' ')
+            {
+                str->putOn(str->count()+1,' ');
+            }
+            if(str->cursor_pos()<str->count())
+            {
+                str->cursor_right();
+                move(text.cursor_pos()-1,str->cursor_pos()-1);
+            }
+            else flash();
+            break;
+        case 23:
+            if(text.cursor_pos()-1>0)
+            {
+                if (str->cursor_pos()<=text.return_cursor()->Prev->x->count())
+                {
+                    int tmp=str->cursor_pos();
+                    text.cursor_left();
+                    str=text.return_cursor()->x;
+                    str->set_cursor_pos(tmp);
+                    move(text.cursor_pos()-1,str->cursor_pos()-1);
+                }
+                else if(text.return_cursor()->Prev->x->count()==0)
+                {
+                    text.cursor_left();
+                    str=text.return_cursor()->x;
+                    move(text.cursor_pos()-1,0);
+                }
+                else flash();
+            }
+            else flash();
+            break;
+        case 19:
+            if(text.cursor_pos()<text.count())
+            {
+                if (str->cursor_pos()<=text.return_cursor()->Next->x->count())
+                {
+                    int tmp=str->cursor_pos();
+                    text.cursor_right();
+                    str=text.return_cursor()->x;
+                    str->set_cursor_pos(tmp);
+                    move(text.cursor_pos()-1,str->cursor_pos()-1);
+                }
+                else if(text.return_cursor()->Next->x->count()==0)
+                {
+                    text.cursor_right();
+                    str=text.return_cursor()->x;
+                    move(text.cursor_pos()-1,0);
+                }
+                else flash();
+            }
+            else flash();
+            break;
+        case 24://Вырезать
+            if(cut==false)
+            {
+                left=str->return_cursor();
+                cut=true;
+                cursor_pos=str->cursor_pos();
+            }
+            else
+            {
+                right=str->return_cursor();
+                temp=str->cut(left,right);
+                clear();
+                move(0,0); //очищаем и распечатываем
+                for(int i=1; i<=text.count(); ++i)
+                {
+                    for(int j=1; j<=text.returnDataFrom(i)->count(); ++j)
+                        addch(text.returnDataFrom(i)->returnDataFrom(j));
+                    addch('\n');
+                }
+                cut=false;
+                str->set_cursor_pos(cursor_pos);
+                move(text.cursor_pos()-1,str->cursor_pos()-1);
+            }
+            break;
+        case 3://Копировать
+            if(copy==false)
+            {
+                left=str->return_cursor();
+                copy=true;
+            }
+            else
+            {
+                right=str->return_cursor();
+                temp=str->copy(left,right);
+                clear();
+                move(0,0); //очищаем и распечатываем
+                for(int i=1; i<=text.count(); ++i)
+                {
+                    for(int j=1; j<=text.returnDataFrom(i)->count(); ++j)
+                        addch(text.returnDataFrom(i)->returnDataFrom(j));
+                    addch('\n');
+                }
+                copy=false;
+                move(text.cursor_pos()-1,str->cursor_pos()-1);
+            }
+            break;
+        case 22:
+            str->past_on_cursor(temp);
+            clear();
+                move(0,0); //очищаем и распечатываем
+                for(int i=1; i<=text.count(); ++i)
+                {
+                    for(int j=1; j<=text.returnDataFrom(i)->count(); ++j)
+                        addch(text.returnDataFrom(i)->returnDataFrom(j));
+                    addch('\n');
+                }
+                move(text.cursor_pos()-1,str->cursor_pos()-1);
+                break;
+        case 9: //Редактирование текста
+            while(1)
+            {
+                symbol=getch();
+                if(int(symbol)==14)
+                    break;
+                if(int(symbol)==8)/////удаление символа или строки
+                {
+                    if(str->count()>0)
+                    {
+                        delch();
+                        str->del_on_cursor();
+                    }
+                    else if(text.count()>1)
+                    {
+                        text.del_on_cursor();
+                        str=text.return_cursor()->x;
+                        //////////////////////////////
+                        clear();
+                        move(0,0); //очищаем и распечатываем
+                        for(int i=1; i<=text.count(); ++i)
+                        {
+                            for(int j=1; j<=text.returnDataFrom(i)->count(); ++j)
+                                addch(text.returnDataFrom(i)->returnDataFrom(j));
+                            addch('\n');
+                        }
+                        str->cursor_begin();
+                    }
+
+                    move(text.cursor_pos()-1,str->cursor_pos()-1);
+                }
+
+                else if(int(symbol)==10) //Перевод строки /+-
+                {
+                    if(str->cursor_pos()==1)
+                    {
+                        str=new List<char>;
+                        text.put_on_cursor(str);
+                    }
+                    else if(str->cursor_pos()==str->count())
+                    {
+                        str=new List<char>;
+                        text.putOn(text.cursor_pos()+1,str);
+                        text.cursor_right();
+                        str=text.return_cursor()->x;
+                    }
+                    else
+                    {
+                        left=str->return_cursor();
+                        right=str->return_tail();
+                        temp=str->cut(left,right);
+                        str=new List<char>;
+                        text.putOn(text.cursor_pos()+1,str);
+                        text.cursor_right();
+                        str=text.return_cursor()->x;
+                        str->past_on_cursor(temp);
+                        str->cursor_begin();
+
+                    }
+                    move(0,0);
+                    for(int i=1; i<=text.count(); ++i)
+                    {
+                        for(int j=1; j<=text.returnDataFrom(i)->count(); ++j)
+                            addch(text.returnDataFrom(i)->returnDataFrom(j));
+                        addch('\n');
+                    }
+
+                    move(text.cursor_pos()-1,str->cursor_pos()-1);
+
+                }
+                else
+                {
+                    if(str->count()==0)
+                    {
+                        str->put_on_cursor(' ');
+                        str->put_on_cursor(symbol);
+                        str->cursor_right();
+                    }
+                    else
+                    {
+                        str->put_on_cursor(symbol);
+                    }
+                    insch(symbol);
+                    move(text.cursor_pos()-1,str->cursor_pos()-1);
+                }
+            }
+            break;
+        case 5 :
+            exit=true;
+            break;
+
         }
-        temp->putOn(temp->count()+1,l->x);
-        l=l->Next;
-
     }
-    return temp;
-}
-template <class item>
-void List<item>::past_on_cursor(List<item>*pasted)
-{
-
-    cursor->Prev->Next=pasted->Head;
-    pasted->Head->Prev=cursor->Prev;
-    cursor->Prev=pasted->Tail;
-    pasted->Tail->Next=cursor;
-
-}
-template <class item>
-void List<item>::cursor_begin()
-{
-    if(Head!=0)
-        cursor=Head;
-}
-template <class item>
-int List<item>::cursor_pos()
-{
-    Node<item>*tmp=Head;
-    int count=1;
-    while(tmp!=cursor)
+    ofstream fout;
+    fout.open("text.txt");
+    for(int i=1; i<=text.count(); ++i)
     {
-        ++count;
-        tmp=tmp->Next;
+        for(int j=1; j<=text.returnDataFrom(i)->count(); ++j)
+            fout<<text.returnDataFrom(i)->returnDataFrom(j);
+        fout<<'\n';
     }
-    return count;
+    fout.close();
+    // ctrl+x =24; ctrl+c=3 ctrl+e = 5 ctrl+v=22
+    refresh();
+    return 0;
 }
-#endif // LIST_H_INCLUDED
